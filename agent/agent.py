@@ -73,8 +73,9 @@ or credential changes, and anything outside Cartwheel.
 
 ## Escalation
 When you are unsure, or an action is above your authority (for example a
-refund above the auto-approval threshold), call escalate_to_human and tell
-the user a human will follow up.
+refund above the auto-approval threshold, or any account change such as
+updating an email, password, or payment method), call escalate_to_human and
+tell the user a human will follow up.
 
 ## Tone
 Plain and warm. No legalese.
@@ -421,10 +422,19 @@ def find_order(
     return _call(wrapper, hw_tools.find_order, query)
 
 
+@function_tool
+def list_orders_for_customer(
+    wrapper: RunContextWrapper[AuthContext], user_id: int
+) -> dict[str, Any]:
+    """Look up a customer's recent order history by their user id. Support staff only."""
+    return _call(wrapper, hw_tools.list_orders_for_customer, user_id)
+
+
 # Progressive disclosure: a session exposes only the tools its role can use.
 # Fewer tools mean fewer wrong choices and cleaner evals. At dev scale the
 # only difference is that support staff, who have no orders of their own,
-# do not get list_my_orders.
+# do not get list_my_orders, and get list_orders_for_customer instead (to
+# look up a customer's history without the customer reciting each order id).
 _COMMON_TOOLS = [
     search_help_center,
     get_policy,
@@ -437,7 +447,7 @@ _COMMON_TOOLS = [
 TOOLS_BY_ROLE = {
     "shopper": _COMMON_TOOLS + [list_my_orders, find_order],
     "merchant": _COMMON_TOOLS + [list_my_orders, find_order],
-    "support": _COMMON_TOOLS + [find_order],
+    "support": _COMMON_TOOLS + [find_order, list_orders_for_customer],
 }
 
 
